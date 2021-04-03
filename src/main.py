@@ -65,6 +65,40 @@ def add_new_professional():
     except Exception as error:
         print (error.args)
         return jsonify ("NOT CREATE USER"), 500
+# Endpoit LogIn:
+@app.route("/login", methods=["POST"])
+def handle_login():
+    """ 
+        check password for user with email = body['email']
+        and return token if match.
+    """
+    if not request.is_json:
+        return jsonify({"msg": "Missing JSON in request"}), 400
+    params = request.get_json()
+    email = params.get('email', None)
+    password = params.get('password', None)
+    if not email:
+        return jsonify({"msg": "Missing email parameter"}), 400
+    if not password:
+        return jsonify({"msg": "Missing password parameter"}), 400
+    user = User.query.filter_by(email=email).one_or_none()
+    if not user:
+        return jsonify({"msg": "User does not exist"}), 404
+    if user.check_password(password):
+        response = {'jwt': create_access_token (identity=user.email), "user": user.serialize()}
+        return jsonify(response), 200
+    else:
+        return jsonify({"msg": "Bad credentials"}), 401
+    if username != 'test' or password != 'test':
+        return jsonify({"msg": "Bad username or password"}), 401, 403
+    # Identity can be any data that is json serializable 
+
+@app.route('/seguro')
+@jwt_required
+def handle_seguro():
+    email = get_jwt_identity()
+    #esto devuelve la identidad del token
+    return jsonify ({"msg":f"Hello,{email}"})           
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3000))
